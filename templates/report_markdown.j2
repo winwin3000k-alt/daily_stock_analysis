@@ -3,14 +3,6 @@
 
 > {{ labels.analyzed_prefix }} **{{ results|length }}** {{ labels.stock_unit }} | 🟢{{ labels.buy_label }}:{{ buy_count }} 🟡{{ labels.watch_label }}:{{ hold_count }} 🔴{{ labels.sell_label }}:{{ sell_count }}
 
-## 📊 今日全市場資金建倉與異動題材真實監控
-> ⚠️ **情報原則**：嚴禁主觀臆測，僅依據當日盤面客觀數據與即時熱點檢索輸出。
-
-* **當日主力資金實時流入板塊**：依據今日全市場漲停效應、板塊成交量比與大單淨買入數據，直接列出今日資金真實流入、且具備最強動能的前 1-2 個異動板塊（如算力租賃、消費電子、低空經濟等輪動題材）。
-* **板塊風向標核心龍頭（附代碼）**：精確指出上述板塊中，率先封板、漲幅最大或成交量最集中的指標個股與代碼，嚴禁含糊其詞。
-
----
-
 ## 📊 {{ labels.summary_heading }}
 
 {% for e in enriched %}
@@ -29,108 +21,145 @@
 
 ## {{ e.signal_emoji }} {{ e.stock_name }} ({{ result.code }})
 
-### 📈 1H / 30Min K線右側均線位置描繪
-> 🛠️ **指標規範**：專注 1 小時 (1H) 與 30 分鐘 (30Min) 級別 K 線，核心比對 8 日與 16 日均線 (EMA/MA) 的真實相對位置，不提供任何買賣決策。
-
-* **1H/30Min 均線狀態核對**：
-  1. **交叉狀態**：1H 與 30Min 的 8 日線與 16 日線目前是「金叉向上」、「死叉向下」還是「交織纏繞」？請給出明確狀態。
-  2. **K線與均線相對位置**：當前 K 線實體是處於 8日/16日 均線上方（多頭支撐）、下方（空頭壓制），還是正在回踩均線？
-  3. **量價配合**：在均線發生異動或交叉時，當日成交量是否伴隨同步放大（給出真實成交量/量比對照）。
-
 {% if intel %}
-### 📰 當日新聞與客觀催化劑
+### 📰 {{ labels.info_heading }}
 
 {% if intel.get('sentiment_summary') %}
-**💭 市場輿情紀實**: {{ intel.sentiment_summary }}
+**💭 {{ labels.sentiment_summary_label }}**: {{ intel.sentiment_summary }}
 {% endif %}
 {% if intel.get('earnings_outlook') %}
-**📊 財報/公告披露**: {{ intel.earnings_outlook }}
+**📊 {{ labels.earnings_outlook_label }}**: {{ intel.earnings_outlook }}
 {% endif %}
 {% if intel.get('risk_alerts') %}
 
-**🚨 客觀風險提示**:
+**🚨 {{ labels.risk_alerts_label }}**:
 {% for alert in intel.risk_alerts %}
 - {{ alert }}
 {% endfor %}
 {% endif %}
 {% if intel.get('positive_catalysts') %}
 
-**✨ 消息面催化因素**:
+**✨ {{ labels.positive_catalysts_label }}**:
 {% for cat in intel.positive_catalysts %}
 - {{ cat }}
 {% endfor %}
 {% endif %}
 {% if intel.get('latest_news') %}
 
-**📢 截止收盤最新資訊**: {{ intel.latest_news }}
+**📢 {{ labels.latest_news_label }}**: {{ intel.latest_news }}
 {% endif %}
 
 {% endif %}
 
-### 📌 數據核心結論
+### 📌 {{ labels.core_conclusion_heading }}
 
-**{{ e.signal_emoji }} 技術面信號** | {{ localize_trend_prediction(result.trend_prediction, report_language) }}
+**{{ e.signal_emoji }} {{ e.signal_text }}** | {{ localize_trend_prediction(result.trend_prediction, report_language) }}
 
-> **一句話盤面概括**: {{ core.get('one_sentence', result.analysis_summary) }}
+> **{{ labels.one_sentence_label }}**: {{ core.get('one_sentence', result.analysis_summary) }}
 
-⏰ **時間動態敏感度**: {{ core.get('time_sensitivity', labels.default_time_sensitivity) }}
+⏰ **{{ labels.time_sensitivity_label }}**: {{ core.get('time_sensitivity', labels.default_time_sensitivity) }}
+
+{% set pos_advice = core.get('position_advice', {}) %}
+{% if pos_advice %}
+| {{ labels.position_status_label }} | {{ labels.action_advice_label }} |
+|---------|---------|
+| 🆕 **{{ labels.no_position_label }}** | {{ pos_advice.get('no_position', localize_operation_advice(result.operation_advice, report_language)) }} |
+| 💼 **{{ labels.has_position_label }}** | {{ pos_advice.get('has_position', labels.continue_holding) }} |
+{% endif %}
 
 {{ market_snapshot(result) }}
 
-### 📊 當日盤後技術指標基準數據
-
-{% set vol_data = data_persp.get('volume_analysis', {}) %}
-{% if vol_data %}
-**💰 當日量能真實數據**: 
-- **量比**: {{ vol_data.get('volume_ratio', 'N/A') }} ({{ vol_data.get('volume_status', '') }}) | **換手率**: {{ vol_data.get('turnover_rate', 'N/A') }}%
-- **大單動向解讀**: *{{ vol_data.get('volume_meaning', '依據成交量與換手率，揭示真實的主力席位與資金流向狀態。') }}*
-{% endif %}
+{% if data_persp %}
+### 📊 {{ labels.data_perspective_heading }}
 
 {% set trend_data = data_persp.get('trend_status', {}) %}
 {% if trend_data %}
-**均線排列**: {{ trend_data.get('ma_alignment', 'N/A') }} | 多頭排列: {{ '✅ 是' if trend_data.get('is_bullish') else '❌ 否' }} | 趨勢強度得分: {{ trend_data.get('trend_score', 'N/A') }}/100
+**{{ labels.ma_alignment_label }}**: {{ trend_data.get('ma_alignment', 'N/A') }} | {{ labels.bullish_alignment_label }}: {{ '✅ ' ~ labels.yes_label if trend_data.get('is_bullish') else '❌ ' ~ labels.no_label }} | {{ labels.trend_strength_label }}: {{ trend_data.get('trend_score', 'N/A') }}/100
 {% endif %}
 
 {% set price_data = data_persp.get('price_position', {}) %}
 {% if price_data %}
-| 技術指標基準 | 真實價格/位置 |
+| {{ labels.price_metrics_label }} | {{ labels.current_price_label }} |
 |---------|------|
-| 當日收盤價 | {{ price_data.get('current_price', 'N/A') }} |
-| MA5 均線價位 | {{ price_data.get('ma5', 'N/A') }} |
-| MA10 均線價位 | {{ price_data.get('ma10', 'N/A') }} |
-| MA20 均線價位 | {{ price_data.get('ma20', 'N/A') }} |
-| MA5 乖離率 | {{ price_data.get('bias_ma5', 'N/A') }}% {{ price_data.get('bias_status', 'N/A') }} |
-| 靜態技術支撐位 | {{ price_data.get('support_level', 'N/A') }} |
-| 靜態技術阻力位 | {{ price_data.get('resistance_level', 'N/A') }} |
+| {{ labels.current_price_label }} | {{ price_data.get('current_price', 'N/A') }} |
+| {{ labels.ma5_label }} | {{ price_data.get('ma5', 'N/A') }} |
+| {{ labels.ma10_label }} | {{ price_data.get('ma10', 'N/A') }} |
+| {{ labels.ma20_label }} | {{ price_data.get('ma20', 'N/A') }} |
+| {{ labels.bias_ma5_label }} | {{ price_data.get('bias_ma5', 'N/A') }}% {{ price_data.get('bias_status', 'N/A') }} |
+| {{ labels.support_level_label }} | {{ price_data.get('support_level', 'N/A') }} |
+| {{ labels.resistance_level_label }} | {{ price_data.get('resistance_level', 'N/A') }} |
+{% endif %}
+
+{% set vol_data = data_persp.get('volume_analysis', {}) %}
+{% if vol_data %}
+**{{ labels.volume_label }}**: {{ labels.volume_ratio_label }} {{ vol_data.get('volume_ratio', 'N/A') }} ({{ vol_data.get('volume_status', '') }}) | {{ labels.turnover_rate_label }} {{ vol_data.get('turnover_rate', 'N/A') }}%
+💡 *{{ vol_data.get('volume_meaning', '') }}*
 {% endif %}
 
 {% set chip_data = data_persp.get('chip_structure', {}) %}
 {% set chip_unavailable_reason = get_chip_unavailable_reason(chip_data, report_language) if chip_data and is_chip_structure_unavailable(chip_data) else get_chip_unavailable_reason(data_persp, report_language) %}
 {% if chip_data and not is_chip_structure_unavailable(chip_data) %}
-**籌碼結構真實分布**: 獲利盤比例: {{ chip_data.get('profit_ratio', 'N/A') }} | 平均成本: {{ chip_data.get('avg_cost', 'N/A') }} | 籌碼集中度: {{ chip_data.get('concentration', 'N/A') }} ({{ localize_chip_health(chip_data.get('chip_health', 'N/A'), report_language) }})
+**{{ labels.chip_label }}**: {{ chip_data.get('profit_ratio', 'N/A') }} | {{ chip_data.get('avg_cost', 'N/A') }} | {{ chip_data.get('concentration', 'N/A') }} {{ localize_chip_health(chip_data.get('chip_health', 'N/A'), report_language) }}
 {% elif chip_unavailable_reason %}
-**籌碼結構真實分布**: {{ chip_unavailable_reason }}
+**{{ labels.chip_label }}**: {{ chip_unavailable_reason }}
+{% endif %}
 {% endif %}
 
 {% if battle %}
-### 🎯 盤面關鍵價位參考（純數據）
+### 🎯 {{ labels.battle_plan_heading }}
 
 {% set sniper = battle.get('sniper_points', {}) %}
 {% if sniper %}
-| 數據點位類型 | 靜態參考價格 |
+**📍 {{ labels.action_points_heading }}**
+
+| {{ labels.action_points_heading }} | {{ labels.current_price_label }} |
 |---------|------|
-| 技術支撐一（理想買點） | {{ clean_sniper(sniper.get('ideal_buy')) }} |
-| 技術支撐二（次級買點） | {{ clean_sniper(sniper.get('secondary_buy')) }} |
-| 結構破位點（止損參考） | {{ clean_sniper(sniper.get('stop_loss')) }} |
-| 阻力目標位（止盈參考） | {{ clean_sniper(sniper.get('take_profit')) }} |
+| 🎯 {{ labels.ideal_buy_label }} | {{ clean_sniper(sniper.get('ideal_buy')) }} |
+| 🔵 {{ labels.secondary_buy_label }} | {{ clean_sniper(sniper.get('secondary_buy')) }} |
+| 🛑 {{ labels.stop_loss_label }} | {{ clean_sniper(sniper.get('stop_loss')) }} |
+| 🎊 {{ labels.take_profit_label }} | {{ clean_sniper(sniper.get('take_profit')) }} |
 {% endif %}
+
+{% set position = battle.get('position_strategy', {}) %}
+{% if position %}
+**💰 {{ labels.suggested_position_label }}**: {{ position.get('suggested_position', 'N/A') }}
+- {{ labels.entry_plan_label }}: {{ position.get('entry_plan', 'N/A') }}
+- {{ labels.risk_control_label }}: {{ position.get('risk_control', 'N/A') }}
+{% endif %}
+
+{% set checklist = battle.get('action_checklist', []) %}
+{% if checklist %}
+**✅ {{ labels.checklist_heading }}**
+{% for item in checklist %}
+- {{ item }}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if not dashboard %}
+{% if result.buy_reason %}
+**💡 操作理由**: {{ result.buy_reason }}
+{% endif %}
+{% if result.risk_warning %}
+**⚠️ 风险提示**: {{ result.risk_warning }}
+{% endif %}
+{% endif %}
+
+{% set hist = history_by_code.get(result.code, []) %}
+{% if hist %}
+### 📜 {{ labels.history_compare_heading }}
+| {{ labels.time_label }} | {{ labels.score_label }} | {{ labels.advice_label }} | {{ labels.trend_label }} |
+|------|------|------|------|
+{% for h in hist %}
+| {{ h.created_at[:16] if h.created_at else 'N/A' }} | {{ h.sentiment_score or 'N/A' }} | {{ localize_operation_advice(h.operation_advice or 'N/A', report_language) }} | {{ localize_trend_prediction(h.trend_prediction or 'N/A', report_language) }} |
+{% endfor %}
 {% endif %}
 
 ---
 {% endfor %}
 {% endif %}
 
-*數據生成時間：{{ report_timestamp }}*
+*{{ labels.generated_at_label }}：{{ report_timestamp }}*
 {% if show_llm_model and models_used %}
-*核心分析模型：{{ models_used|join(', ') }}*
+*{{ labels.analysis_model_label }}：{{ models_used|join(', ') }}*
 {% endif %}
